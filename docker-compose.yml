@@ -7,7 +7,7 @@ services:
       - "8001:8001"
     environment:
       - MODEL_NAME=BAAI/bge-m3
-      - MAX_BATCH_SIZE=64
+      - MAX_BATCH_SIZE=16
       - MAX_WAIT_MS=10
       - NVIDIA_VISIBLE_DEVICES=all
       - CUDA_MODULE_LOADING=LAZY

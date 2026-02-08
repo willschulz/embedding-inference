@@ -19,7 +19,7 @@ from sentence_transformers import SentenceTransformer
 
 # ── Configuration (single place to change the model) ──────────────────────
 MODEL_NAME: str = os.getenv("MODEL_NAME", "BAAI/bge-m3")
-MAX_BATCH_SIZE: int = int(os.getenv("MAX_BATCH_SIZE", "64"))
+MAX_BATCH_SIZE: int = int(os.getenv("MAX_BATCH_SIZE", "16"))
 MAX_WAIT_MS: float = float(os.getenv("MAX_WAIT_MS", "10"))
 PORT: int = int(os.getenv("PORT", "8001"))
 
@@ -147,13 +147,29 @@ class DynamicBatcher:
 
     @torch.inference_mode()
     def _encode(self, texts: List[str]) -> torch.Tensor:
-        with torch.amp.autocast("cuda", dtype=torch.float16):
-            return self.model.encode(
-                texts,
-                convert_to_tensor=True,
-                show_progress_bar=False,
-                batch_size=self.max_batch,
+        """Encode with automatic OOM recovery: halve batch and retry."""
+        return self._encode_safe(texts, batch_size=min(len(texts), self.max_batch))
+
+    def _encode_safe(self, texts: List[str], batch_size: int) -> torch.Tensor:
+        try:
+            with torch.amp.autocast("cuda", dtype=torch.float16):
+                return self.model.encode(
+                    texts,
+                    convert_to_tensor=True,
+                    show_progress_bar=False,
+                    batch_size=batch_size,
+                )
+        except torch.cuda.OutOfMemoryError:
+            torch.cuda.empty_cache()
+            if batch_size <= 1:
+                log.error("OOM even at batch_size=1 (%d texts); cannot recover", len(texts))
+                raise
+            new_bs = max(1, batch_size // 2)
+            log.warning(
+                "CUDA OOM at batch_size=%d (%d texts); retrying with batch_size=%d",
+                batch_size, len(texts), new_bs,
             )
+            return self._encode_safe(texts, batch_size=new_bs)
 
 
 # ── FastAPI application ──────────────────────────────────────────────────
