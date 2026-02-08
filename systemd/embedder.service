@@ -1,0 +1,24 @@
+[Unit]
+Description=Embedder – GPU Embedding API (Docker Compose)
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/wschulz/embedder
+ExecStartPre=/usr/bin/docker compose down --remove-orphans --timeout 30
+ExecStart=/usr/bin/docker compose up
+ExecStop=/usr/bin/docker compose down --timeout 30
+Restart=on-failure
+RestartSec=15
+TimeoutStartSec=600
+TimeoutStopSec=60
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=embedder
+
+[Install]
+WantedBy=multi-user.target

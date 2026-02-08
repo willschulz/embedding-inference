@@ -1,0 +1,32 @@
+services:
+  embedder:
+    build: .
+    image: embedder:latest
+    container_name: embedder
+    ports:
+      - "8001:8001"
+    environment:
+      - MODEL_NAME=BAAI/bge-m3
+      - MAX_BATCH_SIZE=64
+      - MAX_WAIT_MS=10
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_MODULE_LOADING=LAZY
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s

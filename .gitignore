@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+# (don't ignore Dockerfile or docker-compose.yml — those are tracked)
+
+# Model weights / caches (large; downloaded at docker build time)
+*.bin
+*.safetensors
+*.onnx
+*.pt
+*.pth
+models/
+weights/
+
+# HuggingFace / torch caches
+.cache/
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+.env.*
